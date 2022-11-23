@@ -1,25 +1,25 @@
 package models
 
 type User struct {
-	ID				string		`json:"-"		firestore:"-"`
-	name 		string		`json: "name, omitempty"	firestore:"id"` 
-	email 		string		`json:"email, omitempty"	firestore:"email"`
-	password string		`json:"password, omitempty"		firestore:"password"`
+	ID				string		`json:"id"		firestore:"-"`
+	Name 		string		`json: "name"	firestore:"id"` 
+	Email 		string		`json:"email"	firestore:"email"`
+	Password string		`json:"password"		firestore:"password"`
 }
 
 type Shop struct{
 	ID				string		`json:"id"		firestore:"id"`
-	name		string		`json:"name, omitempty "	firestore:"name"`
-	flavors		Flavors		`json:"flavors, omitempty"	firestore:"flavors"`
-	score		float64		`json:"score, omitempty"	firestore:'score"`
-	price		float64		`json:"price, omitempty"	firestore:'"price"`
-	link			string		`json:"link, omitempty"		firestore:link"`
+	Name		string		`json:"name, omitempty "	firestore:"name"`
+	Flavors		Flavors		`json:"flavors, omitempty"	firestore:"flavors"`
+	Score		float64		`json:"score, omitempty"	firestore:'score"`
+	Price		float64		`json:"price, omitempty"	firestore:'"price"`
+	Link			string		`json:"link, omitempty"		firestore:'link"`
 }
 
 type Flavors struct{
-	flavorOne	string		`json:"flavorOne, omitempty"	firestore:"flavor_one"`
-	flavorTwo	string		`json:"flavorTwo"	firestore:"flavor_two"`
-	flavorThree	string		`json:"flavorThree	firestore:"flavor_three""`
-	flavorFour	string		`json:"flavorFour"	firestore:"flavor_four"`
-	flavorFive	string		`json:"flavorFive"	firestore:"flavor_five"`
+	FlavorOne	string		`json:"flavorOne, omitempty"	firestore:"flavor_one"`
+	FlavorTwo	string		`json:"flavorTwo"	firestore:"flavor_two"`
+	FlavorThree	string		`json:"flavorThree	firestore:"flavor_three""`
+	FlavorFour	string		`json:"flavorFour"	firestore:"flavor_four"`
+	FlavorFive	string		`json:"flavorFive"	firestore:"flavor_five"`
 }

@@ -10,6 +10,7 @@ func HandleRequest(){
 
 	//r.POST("/login", controllers.Login) // com e-mail e senha
 	r.POST("/user", controllers.CreateUser)
+	r.GET("/:id", controllers.FindUser)
 	r.GET("/", controllers.Teste)
 	//r.POST("/pizzarias", controllers.Create) //criar loja com: nome, nota, sabores, link para pedido e preço
 	//r.GET("/pizzarias/:name", controllers.ReadByName) 
