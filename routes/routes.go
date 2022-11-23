@@ -9,7 +9,9 @@ func HandleRequest(){
 	r := gin.Default()
 
 	//r.POST("/login", controllers.Login) // com e-mail e senha
-	r.GET("/pizzarias", controllers.Create) //criar loja com: nome, nota, sabores, link para pedido e preço
+	r.POST("/user", controllers.CreateUser)
+	r.GET("/", controllers.Teste)
+	//r.POST("/pizzarias", controllers.Create) //criar loja com: nome, nota, sabores, link para pedido e preço
 	//r.GET("/pizzarias/:name", controllers.ReadByName) 
 	//r.GET("/pizzarias/:score", controllers.ReadByScore)
 	//r.GET("/pizzarias/:price", controllers.ReadByPrice) //irá procurar pelo preço até o limite definido
