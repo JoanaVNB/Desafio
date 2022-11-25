@@ -104,7 +104,7 @@ func ReadByName(c *gin.Context){
 	fmt.Println("loja:", name)
 
 	//na coleção Shop, procurar por name igual a name
-	iter := shopCollection.Where("Name", "==", name).Documents(c)
+	iter := shopCollection.Where("name", "==", name).Documents(c)
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done{
@@ -136,7 +136,7 @@ func ReadByScore(c *gin.Context){
 	}
 	fmt.Println("nota:", score)
 
-	iter := shopCollection.Where("Score", ">=", score).Documents(c)
+	iter := shopCollection.Where("score", ">=", score).Documents(c)
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done{
@@ -167,7 +167,7 @@ func ReadByPrice(c *gin.Context){
 	}
 	fmt.Println("preço:", price)
 
-	iter := shopCollection.Where("Price", "<=", price).Documents(c)
+	iter := shopCollection.Where("price", "<=", price).Documents(c)
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done{
@@ -210,18 +210,19 @@ func Update(c *gin.Context){
 	shopCollection.Doc(givenID).Set(c, s)
 	c.JSON(http.StatusOK, s)
 }
-
-func UpdateNoteToZero(c *gin.Context){
+//criar da forma com JSON
+func UpdateScore(c *gin.Context){
 	shopCollection, _ := conectShopCollection()
-
+	
 	givenID := c.Params.ByName("id")
-	_, err := shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "Score", Value: 0}})
+	score, err:= strconv.ParseFloat(c.Param("score"), 64)
+	_, err = shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "Score", Value: score}})
 	if err != nil{
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"erro ao atualizar": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, "zerado")
+	c.JSON(http.StatusOK, "score atualizado")
 }
 
 func UpdatePrice(c *gin.Context){

@@ -18,7 +18,8 @@ func HandleRequest(){
 	r.GET("/pizzarias/score/:score", controllers.ReadByScore)
 	r.GET("/pizzarias/price/:price", controllers.ReadByPrice)
 	r.PUT("/pizzarias/:id", controllers.Update)
-	r.PUT("/pizzarias/zerar/:id", controllers.UpdateNoteToZero)
+	//r.PUT("/pizzarias/zerar/:id", controllers.UpdateNoteToZero)
+	r.PUT("/pizzarias/:id/score/:score", controllers.UpdateScore)
 	//r.PATCH("/pizzarias/name/:id", controllers.UpdateName)//com erro
 	//r.PUT("/pizzarias/price/:id", controllers.UpdatePrice)//com erro
 	r.DELETE("/pizzarias/:id", controllers.Delete)
@@ -28,8 +29,8 @@ func HandleRequest(){
 
 //TO DO
 	//funções Uptades que atualizam campos especificos
-	//validar campos
-	//não repetir nome da loja e email do usuario
+	//validar campos -> go playgroud
+	//não repetir nome da loja e email do usuario -> fazer função
 	//função middleware autenticar
 	//fazer login com validação de e-mail e senha
 	//fazer ranking de pizzarias
