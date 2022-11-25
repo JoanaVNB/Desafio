@@ -8,17 +8,29 @@ import(
 func HandleRequest(){
 	r := gin.Default()
 
-	//r.POST("/login", controllers.Login) // com e-mail e senha
+	r.GET("/", controllers.Teste)
 	r.POST("/user", controllers.CreateUser)
 	r.GET("/:id", controllers.FindUser)
-	r.GET("/", controllers.Teste)
-	//r.POST("/pizzarias", controllers.Create) //criar loja com: nome, nota, sabores, link para pedido e preço
-	//r.GET("/pizzarias/:name", controllers.ReadByName) 
-	//r.GET("/pizzarias/:score", controllers.ReadByScore)
-	//r.GET("/pizzarias/:price", controllers.ReadByPrice) //irá procurar pelo preço até o limite definido
-	//r.PUT("/pizzarias/:name", controllers.Update)//Atualiza qualquer item
-	//r.DELETE("/pizzarias/:name", controllers.Delete) //Deleta loja
+	r.POST("/pizzarias", controllers.Create)
+	r.GET("/pizzarias", controllers.ListAll)
+	r.GET("/pizzarias/:id", controllers.ReadByID) 
+	r.GET("/pizzarias/name/:name", controllers.ReadByName) 
+	r.GET("/pizzarias/score/:score", controllers.ReadByScore)
+	r.GET("/pizzarias/price/:price", controllers.ReadByPrice)
+	r.PUT("/pizzarias/:id", controllers.Update)
+	r.PUT("/pizzarias/zerar/:id", controllers.UpdateNoteToZero)
+	//r.PATCH("/pizzarias/name/:id", controllers.UpdateName)//com erro
+	//r.PUT("/pizzarias/price/:id", controllers.UpdatePrice)//com erro
+	r.DELETE("/pizzarias/:id", controllers.Delete)
 
-	r.Run()
-	//se der tempo, fazer função autenticar
-}
+	r.Run(":5500")
+}	
+
+//TO DO
+	//funções Uptades que atualizam campos especificos
+	//validar campos
+	//não repetir nome da loja e email do usuario
+	//função middleware autenticar
+	//fazer login com validação de e-mail e senha
+	//fazer ranking de pizzarias
+

@@ -8,18 +8,18 @@ type User struct {
 }
 
 type Shop struct{
-	ID				string		`json:"id"		firestore:"id"`
-	Name		string		`json:"name, omitempty "	firestore:"name"`
-	Flavors		Flavors		`json:"flavors, omitempty"	firestore:"flavors"`
-	Score		float64		`json:"score, omitempty"	firestore:'score"`
-	Price		float64		`json:"price, omitempty"	firestore:'"price"`
-	Link			string		`json:"link, omitempty"		firestore:'link"`
+	ID				string		`json:"id"		firestore:"-"`
+	Name		string		`json:"name, required"	firestore:"name"`
+	Flavors		Flavors		`json:"flavors"	firestore:"flavors"`
+	Score		float64		`json:"score, required"	firestore:'score"`
+	Price		float64		`json:"price"	firestore:'"price"`
+	Link			string		`json:"link"		firestore:'link"`
 }
 
 type Flavors struct{
-	FlavorOne	string		`json:"flavorOne, omitempty"	firestore:"flavor_one"`
+	FlavorOne	string		`json:"flavorOne"	firestore:"flavor_one"`
 	FlavorTwo	string		`json:"flavorTwo"	firestore:"flavor_two"`
-	FlavorThree	string		`json:"flavorThree	firestore:"flavor_three""`
+	FlavorThree	string		`json:"flavorThree"	firestore:"flavor_three"`
 	FlavorFour	string		`json:"flavorFour"	firestore:"flavor_four"`
 	FlavorFive	string		`json:"flavorFive"	firestore:"flavor_five"`
 }

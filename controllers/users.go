@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func ConectDataBase() (*firestore.CollectionRef, error){
+func conectDataBase() (*firestore.CollectionRef, error){
 	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:9090")
 
 	ctx := context.Background()
@@ -23,10 +23,9 @@ func ConectDataBase() (*firestore.CollectionRef, error){
 	return usersCollection, err
 }
 
-//POST
 func   CreateUser(c  *gin.Context){
 	var u models.User
-	usersCollection, err := ConectDataBase()
+	usersCollection, err := conectDataBase()
 	
 	if err := c.ShouldBindJSON(&u); err != nil { //converte os dados recebidos em JSON para bites para alocar dentro da struct User(u)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -39,22 +38,21 @@ func   CreateUser(c  *gin.Context){
 	_, err = usersCollection.Doc(u.ID).Create(c, u)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"erro ao add na collection": err.Error()})
+			"erro ao criar na collection": err.Error()})
 		return
 	}
 	c.JSON(http.StatusCreated, u)//converte bytes para json
 }
 
-//GET
 func FindUser(c *gin.Context){
 	var u models.User
-	usersCollection, err := ConectDataBase()
+	usersCollection, err := conectDataBase()
 
 	givenID:= c.Params.ByName("id")
-	doc, err := usersCollection.Doc(givenID).Get(c.Request.Context())//gera um documento
+	doc, err := usersCollection.Doc(givenID).Get(c.Request.Context())//gera um documento, este doc é somente para buscar id no documento
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-		"erro ao encontrar email na collection": err.Error()})
+		"erro ao encontrar id na collection": err.Error()})
 		return
 	}
 
@@ -64,7 +62,6 @@ func FindUser(c *gin.Context){
 		return
 	}
 
-	//u.ID = doc.Ref.ID
 	c.JSON(http.StatusOK, gin.H{
 		"Sucesso": u})
 }
