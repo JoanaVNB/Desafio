@@ -4,11 +4,12 @@ RUN apk add openjdk11
 
 RUN npm install -g firebase-tools
 
-WORKDIR /app
+WORKDIR /firestore
 COPY firebase.json .
 
 ENV FIREBASE_PROJECT_ID=desafio-c0479
 
-EXPOSE 9090
+EXPOSE 9091
+EXPOSE 4000
 
-CMD ["sh", "-c", "firebase --project=desafio-c0479 emulators:start --only firestore" ]
+CMD ["sh", "-c", "firebase --project=$FIREBASE_PROJECT_ID emulators:start --only firestore" ]

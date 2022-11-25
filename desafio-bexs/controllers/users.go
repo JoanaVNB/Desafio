@@ -12,7 +12,7 @@ import (
 )
 
 func conectDataBase() (*firestore.CollectionRef, error){
-	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:9091")
+	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
 
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "desafio-c0479")
