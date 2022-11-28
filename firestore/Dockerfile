@@ -8,8 +8,9 @@ WORKDIR /firestore
 COPY firebase.json .
 
 ENV FIREBASE_PROJECT_ID=desafio-c0479
+ENV ENABLE_UI=true
 
 EXPOSE 9091
-EXPOSE 4000
+EXPOSE 4040
 
 CMD ["sh", "-c", "firebase --project=$FIREBASE_PROJECT_ID emulators:start --only firestore" ]

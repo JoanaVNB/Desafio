@@ -15,8 +15,8 @@ import (
 )
 
 func conectUserCollection() (*firestore.CollectionRef, error){
-	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:9091")
-//_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
+	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
+
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "desafio-c0479")
 	if err != nil {
@@ -97,26 +97,6 @@ func FindUser(c *gin.Context){
 	}
 	c.JSON(http.StatusOK, u)
 }
-
-/* func docEmailRegistered(email string , c *gin.Context) (*firestore.DocumentSnapshot) {
-	usersCollection, _ := conectUserCollection()	
-
-	iter := usersCollection.Where("email", "==", email).Documents(c)
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done{
-			break
-		}
-		if err != nil{
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"não conseguiu percorrer coleção": err.Error()})
-		}
-		if doc != nil{
-			return doc
-		}
-	}	
-	return nil
-}	 */
 
 func Login(c *gin.Context){
 	var u models.User
