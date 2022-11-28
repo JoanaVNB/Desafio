@@ -6,21 +6,22 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"fmt"
 	"strconv"
 	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/iterator"
-	//"google.golang.org/api/option"
-	//"firebase.google.com/go/v4"
 	"github.com/google/uuid"
+	"errors"
+	"github.com/go-playground/validator/v10"
+	"sort"
 )
 
 func conectShopCollection() (*firestore.CollectionRef, error){
-	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
+	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:9091")
+	//_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
 
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "desafio-c0479") //NÃO É CLIENT
+	client, err := firestore.NewClient(ctx, "desafio-c0479")
 	if err != nil {
 		log.Println(err)
 	}
@@ -28,25 +29,56 @@ func conectShopCollection() (*firestore.CollectionRef, error){
 	return shopCollection, err
 }
 
+func nameRegistered(name string , c *gin.Context) bool{
+	shopCollection, _ := conectShopCollection()	
+
+	iter := shopCollection.Where("name", "==", name).Documents(c)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done{
+			break
+		}
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"não conseguiu percorrer coleção": err.Error()})
+		}
+		if doc != nil{
+			c.JSON(http.StatusConflict, "Nome da loja já foi cadastrada.")
+			return true
+		}
+	}	
+	c.JSON(http.StatusOK, "Nome da loja pode ser criada")
+			return false
+}	
+
 func Create(c *gin.Context){
 	var s models.Shop
+	var ve validator.ValidationErrors
 	shopCollection, err := conectShopCollection()
 	
-	if err := c.ShouldBindJSON(&s); err != nil { //converte os dados recebidos em JSON para bites para alocar dentro da struct User(u)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"erro em converter byte para json": err.Error()})
-		return
-	}
-	
-	s.ID = uuid.NewString()
 
-	_, err = shopCollection.Doc(s.ID).Create(c, s)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"erro ao criar na collection": err.Error()})
-		return
+	if err := c.ShouldBindJSON(&s); err != nil {
+		if errors.As(err, &ve){
+			out := make([]models.ErrorMsg, len(ve))
+			for i, fe := range ve{
+				out[i] = models.ErrorMsg{fe.Field(), models.GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"errors": out})
+		}
+		return 
 	}
-	c.JSON(http.StatusCreated, s)
+
+	if nameRegistered(s.Name, c) == false{
+			s.ID = uuid.NewString()
+			_, err = shopCollection.Doc(s.ID).Create(c, s)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"erro ao criar na collection": err.Error()})
+			return
+			}
+		}
+		c.JSON(http.StatusCreated, s)
 }
 
 func ListAll(c *gin.Context){
@@ -65,9 +97,9 @@ func ListAll(c *gin.Context){
 				return
 		}
 		
-		if err := doc.DataTo(&s); err != nil {//we can extract the document's data into a value of type Shop
+		if err := doc.DataTo(&s); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-		"erro ao passar dado para struct User": err.Error()})
+		"erro ao extrair da struct User": err.Error()})
 		return
 		}
 	
@@ -89,7 +121,7 @@ func ReadByID(c *gin.Context){
 
 	if err := doc.DataTo(&s); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-		"erro ao passar dado para struct Shop": err.Error()})
+		"erro ao extrair da struct Shop": err.Error()})
 		return
 	}
 	s.ID = doc.Ref.ID
@@ -101,9 +133,7 @@ func ReadByName(c *gin.Context){
 	shopCollection, _ := conectShopCollection()
 
 	name:= c.Params.ByName("name")
-	fmt.Println("loja:", name)
 
-	//na coleção Shop, procurar por name igual a name
 	iter := shopCollection.Where("name", "==", name).Documents(c)
 	for {
 		doc, err := iter.Next()
@@ -118,11 +148,10 @@ func ReadByName(c *gin.Context){
 			
 		if err := doc.DataTo(&s); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-		"erro ao passar dado para struct User": err.Error()})
+		"erro ao extrair da struct Shop": err.Error()})
 		return
 		}
-	
-	c.JSON(http.StatusOK,  s)
+		c.JSON(http.StatusOK,  s)
 	}
 }
 
@@ -134,7 +163,6 @@ func ReadByScore(c *gin.Context){
 	if err != nil{
 		c.JSON(http.StatusBadRequest, "erro ao converter para float64")
 	}
-	fmt.Println("nota:", score)
 
 	iter := shopCollection.Where("score", ">=", score).Documents(c)
 	for {
@@ -152,8 +180,7 @@ func ReadByScore(c *gin.Context){
 			c.JSON(http.StatusInternalServerError, 	"erro extrair da struct Shop")
 		return
 		}
-	
-	c.JSON(http.StatusOK, s)
+		c.JSON(http.StatusOK, s)
 	}
 }
 
@@ -164,8 +191,8 @@ func ReadByPrice(c *gin.Context){
 	price, err:= strconv.ParseFloat(c.Param("price"), 64)
 	if err != nil{
 		c.JSON(http.StatusBadRequest, "erro ao converter para float64")
+		return
 	}
-	fmt.Println("preço:", price)
 
 	iter := shopCollection.Where("price", "<=", price).Documents(c)
 	for {
@@ -175,7 +202,7 @@ func ReadByPrice(c *gin.Context){
 		}
 		if err != nil{
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"erro ao encontrar nota na collection": err.Error()})
+				"erro ao encontrar preço na collection": err.Error()})
 			return
 		}
 		if err := doc.DataTo(&s); err != nil {
@@ -210,15 +237,15 @@ func Update(c *gin.Context){
 	shopCollection.Doc(givenID).Set(c, s)
 	c.JSON(http.StatusOK, s)
 }
-//criar da forma com JSON
+
 func UpdateScore(c *gin.Context){
 	shopCollection, _ := conectShopCollection()
 	
 	givenID := c.Params.ByName("id")
 	score, err:= strconv.ParseFloat(c.Param("score"), 64)
-	_, err = shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "Score", Value: score}})
+		_, err = shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "score", Value: score}})
 	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"erro ao atualizar": err.Error()})
 		return
 	}
@@ -226,51 +253,44 @@ func UpdateScore(c *gin.Context){
 }
 
 func UpdatePrice(c *gin.Context){
-	var s models.Shop
-	shopCollection, _ := conectShopCollection()
+	var p models.PriceUpdated
 
+	shopCollection, _ := conectShopCollection()
 	givenID := c.Params.ByName("id")
-	doc, err := shopCollection.Doc(givenID).Get(c.Request.Context())
+
+	if err := c.ShouldBindJSON(&p); err != nil { 
+		c.JSON(http.StatusBadRequest, gin.H{
+			"erro ao converter": err.Error()})
+		return
+	}
+		_, err := shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "price", Value: p.NewPrice}})
 	if err != nil{
 		c.JSON(http.StatusNotFound, gin.H{
-			"erro ao retornar documento": err.Error()})
+			"erro ao atualizar": err.Error()})
 		return
 	}
-	
-	if err:= c.ShouldBindJSON(&s.Price); err != nil{
-		c.JSON(http.StatusNotFound, gin.H{
-			"erro ao converter para struct": err.Error()})//"erro ao converter para struct": "json: cannot unmarshal object into Go value of type float64"
-		return
-	}
-	s.ID = uuid.NewString()
-	s.ID = doc.Ref.ID
-	shopCollection.Doc(givenID).Set(c, s)
-	c.JSON(http.StatusOK, gin.H{
-		"preço atualizado": s})
+	c.JSON(http.StatusOK, "preço atualizado")
 }
 
 func UpdateName(c *gin.Context){
-	var s models.Shop
-	shopCollection, _ := conectShopCollection()
+	var n models.NameUpdated
 
+	shopCollection, _ := conectShopCollection()
 	givenID := c.Params.ByName("id")
-	doc, err := shopCollection.Doc(givenID).Get(c.Request.Context())
+
+	if err := c.ShouldBindJSON(&n); err != nil { 
+		c.JSON(http.StatusBadRequest, gin.H{
+			"erro": err.Error()})
+		return
+	}
+
+	_, err := shopCollection.Doc(givenID).Update(c, []firestore.Update{{Path: "name", Value: n.NewName}})
 	if err != nil{
 		c.JSON(http.StatusNotFound, gin.H{
-			"erro ao retornar documento": err.Error()})
+			"erro ao atualizar": err.Error()})
 		return
 	}
-	
-	if err:= c.ShouldBindJSON(&s.Name); err != nil{
-		c.JSON(http.StatusNotFound, gin.H{
-			"erro ao converter para struct": err.Error()})//"json: cannot unmarshal object into Go value of type string"
-		return
-	}
-	s.ID = uuid.NewString()
-	s.ID = doc.Ref.ID
-	shopCollection.Doc(givenID).Set(c, s)
-	c.JSON(http.StatusOK, gin.H{
-		"preço atualizado": s})
+	c.JSON(http.StatusOK,  "nome atualizado")
 }
 
 func Delete(c *gin.Context){
@@ -283,4 +303,48 @@ func Delete(c *gin.Context){
 		return
 	}
 	c.JSON(http.StatusOK, "apagado")
+}
+
+func ListScores(c *gin.Context) (map[string]float64){
+	var s models.Shop
+	shopCollection, _:= conectShopCollection()
+
+	scores := make(map[string]float64)
+
+	iter := shopCollection.Documents(c)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done{
+			break
+		}
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"erro": err.Error()})
+				return nil
+		}
+		
+		if err := doc.DataTo(&s); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+		"erro ao extrair dados da struct Shop": err.Error()})
+		return nil
+		}
+		scores[s.Name] = s.Score
+	}
+	return scores
+}
+
+func Ranking(c *gin.Context){
+	list := ListScores(c)
+	
+	keys := make([]string, 0, len(list))
+
+	for k := range list{
+		keys = append(keys, k)
+	}
+	
+	sort.SliceStable(keys, func(i, j int) bool{
+		return list[keys[i]] > list[keys[j]]
+	})
+
+	c.JSON(http.StatusOK, keys)
 }

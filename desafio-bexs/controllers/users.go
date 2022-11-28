@@ -1,19 +1,22 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
-	"cloud.google.com/go/firestore"
-	"os"
 	"context"
-	"log"
 	"desafio/models"
+	"log"
+	"net/http"
+	"os"
+	"cloud.google.com/go/firestore"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"google.golang.org/api/iterator"
+	"errors"
 )
 
-func conectDataBase() (*firestore.CollectionRef, error){
-	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
-
+func conectUserCollection() (*firestore.CollectionRef, error){
+	_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "0.0.0.0:9091")
+//_ = os.Setenv("FIRESTORE_EMULATOR_HOST", "firestore:9091")
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "desafio-c0479")
 	if err != nil {
@@ -23,33 +26,64 @@ func conectDataBase() (*firestore.CollectionRef, error){
 	return usersCollection, err
 }
 
-func   CreateUser(c  *gin.Context){
+func emailRegistered(email string , c *gin.Context) (bool) {
+	usersCollection, _ := conectUserCollection()	
+
+	iter := usersCollection.Where("email", "==", email).Documents(c)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done{
+			break
+		}
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"não conseguiu percorrer coleção": err.Error()})
+		}
+		if doc != nil{
+			c.JSON(http.StatusConflict, "E-mail foi cadastrado.")
+			return true
+		}
+	}	
+	c.JSON(http.StatusOK, "Conta pode ser criada")
+			return false
+}	
+
+func CreateUser(c  *gin.Context){
 	var u models.User
-	usersCollection, err := conectDataBase()
+	var ve validator.ValidationErrors
+	usersCollection, err :=conectUserCollection()
 	
-	if err := c.ShouldBindJSON(&u); err != nil { //converte os dados recebidos em JSON para bites para alocar dentro da struct User(u)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"erro em converter byte para json": err.Error()})
-		return
+
+	if err := c.ShouldBindJSON(&u); err != nil {
+		if errors.As(err, &ve){
+			out := make([]models.ErrorMsg, len(ve))
+			for i, fe := range ve{
+				out[i] = models.ErrorMsg{fe.Field(), models.GetErrorMsg(fe)}
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"errors": out})
+		}
+		return 
 	}
 
-	u.ID = uuid.NewString()
-
-	_, err = usersCollection.Doc(u.ID).Create(c, u)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"erro ao criar na collection": err.Error()})
-		return
-	}
-	c.JSON(http.StatusCreated, u)//converte bytes para json
+	if emailRegistered(u.Email, c) == false{
+			u.ID = uuid.NewString()
+			_, err = usersCollection.Doc(u.ID).Create(c, u)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"erro ao criar na collection": err.Error()})
+			return
+			}
+		}
+		c.JSON(http.StatusCreated, u)
 }
 
 func FindUser(c *gin.Context){
 	var u models.User
-	usersCollection, err := conectDataBase()
+	usersCollection, err := conectUserCollection()
 
 	givenID:= c.Params.ByName("id")
-	doc, err := usersCollection.Doc(givenID).Get(c.Request.Context())//gera um documento, este doc é somente para buscar id no documento
+	doc, err := usersCollection.Doc(givenID).Get(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 		"erro ao encontrar id na collection": err.Error()})
@@ -58,18 +92,64 @@ func FindUser(c *gin.Context){
 
 	if err := doc.DataTo(&u); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-		"erro ao passar dado para struct User": err.Error()})
+		"erro ao extrair dado da struct User": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"Sucesso": u})
+	c.JSON(http.StatusOK, u)
 }
 
+/* func docEmailRegistered(email string , c *gin.Context) (*firestore.DocumentSnapshot) {
+	usersCollection, _ := conectUserCollection()	
 
-//func  para testar conexão
-func Teste (c  *gin.Context){
-	c.JSON(http.StatusOK, gin.H{
-		"message" : "testado",
-	})
+	iter := usersCollection.Where("email", "==", email).Documents(c)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done{
+			break
+		}
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"não conseguiu percorrer coleção": err.Error()})
+		}
+		if doc != nil{
+			return doc
+		}
+	}	
+	return nil
+}	 */
+
+func Login(c *gin.Context){
+	var u models.User
+	var l models.Login
+	usersCollection, _ := conectUserCollection()	
+	
+	if err := c.ShouldBindJSON(&l); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"erro ao extrair dado da struct Login": err.Error()})
+			return
+	}	
+
+	iter := usersCollection.Where("email", "==", l.Email).Documents(c)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done{
+			break
+		}
+		if err != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"não conseguiu percorrer coleção": err.Error()})
+		}
+	
+	if err := doc.DataTo(&u); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+		"erro ao extrair dado da struct User": err.Error()})
+		return
+	}
+}
+
+if u.Password != l.Password{
+		c.JSON(http.StatusBadRequest, "Senha incorreta")
+		return
+	}
+	c.JSON(http.StatusAccepted,  "Usuário autorizado")
 }

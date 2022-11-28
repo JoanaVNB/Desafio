@@ -8,9 +8,10 @@ import(
 func HandleRequest(){
 	r := gin.Default()
 
-	r.GET("/", controllers.Teste)
 	r.POST("/user", controllers.CreateUser)
 	r.GET("/:id", controllers.FindUser)
+	r.POST("/login", controllers.Login)
+
 	r.POST("/pizzarias", controllers.Create)
 	r.GET("/pizzarias", controllers.ListAll)
 	r.GET("/pizzarias/:id", controllers.ReadByID) 
@@ -18,20 +19,11 @@ func HandleRequest(){
 	r.GET("/pizzarias/score/:score", controllers.ReadByScore)
 	r.GET("/pizzarias/price/:price", controllers.ReadByPrice)
 	r.PUT("/pizzarias/:id", controllers.Update)
-	//r.PUT("/pizzarias/zerar/:id", controllers.UpdateNoteToZero)
-	r.PUT("/pizzarias/:id/score/:score", controllers.UpdateScore)
-	//r.PATCH("/pizzarias/name/:id", controllers.UpdateName)//com erro
-	//r.PUT("/pizzarias/price/:id", controllers.UpdatePrice)//com erro
+	r.PUT("/pizzarias/:id/score/:score", controllers.UpdateScore)//por URL
+	r.PUT("/pizzarias/:id/name", controllers.UpdateName)//por JSON
+	r.PUT("/pizzarias/:id/price", controllers.UpdatePrice)//por JSON
 	r.DELETE("/pizzarias/:id", controllers.Delete)
+	r.GET("/pizzarias/ranking", controllers.Ranking)
 
 	r.Run(":5500")
 }	
-
-//TO DO
-	//funções Uptades que atualizam campos especificos
-	//validar campos -> go playgroud
-	//não repetir nome da loja e email do usuario -> fazer função
-	//função middleware autenticar
-	//fazer login com validação de e-mail e senha
-	//fazer ranking de pizzarias
-
